@@ -10,7 +10,9 @@ import { formatDistanceToNow } from 'date-fns'
 
 export function Header() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+    const [isProfileOpen, setIsProfileOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
+    const profileRef = useRef<HTMLDivElement>(null)
 
     const selectedPeriod = useAppStore((s) => s.selectedPeriod)
     const setSelectedPeriod = useAppStore((s) => s.setSelectedPeriod)
@@ -24,6 +26,9 @@ export function Header() {
         function handleClickOutside(event: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsDropdownOpen(false)
+            }
+            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+                setIsProfileOpen(false)
             }
         }
         document.addEventListener('mousedown', handleClickOutside)
@@ -44,20 +49,46 @@ export function Header() {
         return () => document.removeEventListener('keydown', handleKeyDown)
     }, [])
 
+    const user = useAppStore((s) => s.user)
+    const setConnected = useAppStore((s) => s.setConnected)
+    const reset = useAppStore((s) => s.reset)
+
+    // ... (rest of search/dropdown logic)
+
     const handleRefresh = async () => {
         if (isSyncing) return
 
+        const basiqUserId = user.basiqUserId
+        if (!basiqUserId) return
+
         setSyncing(true)
         try {
-            const response = await fetch('/api/sync', { method: 'POST' })
+            const response = await fetch('/api/sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ basiqUserId }),
+            })
             if (response.ok) {
                 updateLastSync()
                 // Refresh data would be handled by React Query in real implementation
+                // For now we just refresh the page to trigger the store update if needed,
+                // but handleSync in page.tsx already updates the store.
+                // However, handleRefresh here doesn't update transactions.
+                // To fix this properly, we should move handleSync to a global action or use React Query.
+                // For now, let's just reload the page to trigger the mount sync.
+                window.location.reload()
             }
         } catch (error) {
             console.error('Sync failed:', error)
         } finally {
             setSyncing(false)
+        }
+    }
+
+    const handleDisconnect = () => {
+        if (confirm('Are you sure you want to disconnect? This will clear all data.')) {
+            reset()
+            window.location.reload()
         }
     }
 
@@ -102,8 +133,8 @@ export function Header() {
                                         key={index}
                                         onClick={() => handlePeriodSelect(period)}
                                         className={`w-full px-4 py-2.5 text-left text-sm transition-colors ${selectedPeriod.label === period.label
-                                                ? 'bg-malachite/20 text-malachite'
-                                                : 'text-papaya-whip hover:bg-papaya-whip/10'
+                                            ? 'bg-malachite/20 text-malachite'
+                                            : 'text-papaya-whip hover:bg-papaya-whip/10'
                                             }`}
                                     >
                                         {period.label}
@@ -133,11 +164,48 @@ export function Header() {
                         </Button>
 
                         {/* Profile */}
-                        <IconButton
-                            icon={<User className="w-5 h-5" />}
-                            label="Profile"
-                            variant="ghost"
-                        />
+                        <div ref={profileRef} className="relative">
+                            <IconButton
+                                icon={<User className="w-5 h-5" />}
+                                label="Profile"
+                                variant="ghost"
+                                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                            />
+
+                            {isProfileOpen && (
+                                <div className="absolute top-full mt-2 right-0 w-56 bg-card border border-iron-grey rounded-lg shadow-xl overflow-hidden animate-fade-in">
+                                    <div className="px-4 py-3 border-b border-iron-grey">
+                                        <p className="text-sm font-medium text-papaya-whip">
+                                            {user.basiqUserId === 'demo-user' ? 'Demo Account' : 'Live Account'}
+                                        </p>
+                                        <p className="text-xs text-papaya-whip/50 truncate">
+                                            {user.basiqUserId === 'demo-user' ? 'Using sample data' : user.id}
+                                        </p>
+                                    </div>
+
+                                    <div className="py-1">
+                                        {user.basiqUserId === 'demo-user' && (
+                                            <button
+                                                onClick={() => {
+                                                    reset()
+                                                    window.location.reload()
+                                                }}
+                                                className="w-full px-4 py-2 text-left text-sm text-malachite hover:bg-malachite/10 transition-colors"
+                                            >
+                                                Connect Real Bank
+                                            </button>
+                                        )}
+
+                                        <button
+                                            onClick={handleDisconnect}
+                                            className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-400/10 transition-colors"
+                                        >
+                                            Disconnect & Logout
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

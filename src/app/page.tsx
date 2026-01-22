@@ -30,6 +30,14 @@ export default function DashboardPage() {
         setIsHydrated(true)
     }, [])
 
+    const [email, setEmail] = useState('')
+    const [isConnecting, setIsConnecting] = useState(false)
+
+    // Handle hydration
+    useEffect(() => {
+        setIsHydrated(true)
+    }, [])
+
     // Auto-sync on mount if needed
     useEffect(() => {
         if (!isHydrated) return
@@ -40,9 +48,6 @@ export default function DashboardPage() {
 
         if (isConnected && shouldAutoSync) {
             handleSync()
-        } else if (!isConnected) {
-            // Demo mode - load mock data
-            handleDemoConnect()
         }
     }, [isHydrated, isConnected])
 
@@ -50,7 +55,12 @@ export default function DashboardPage() {
         setLoading(true)
 
         try {
-            const basiqUserId = useAppStore.getState().user.basiqUserId || 'demo-user'
+            const basiqUserId = useAppStore.getState().user.basiqUserId
+
+            if (!basiqUserId) {
+                console.warn('No Basiq User ID found for sync')
+                return
+            }
 
             const response = await fetch('/api/sync', {
                 method: 'POST',
@@ -81,7 +91,50 @@ export default function DashboardPage() {
         setConnected(true)
 
         // Load demo data
-        await handleSync()
+        // We'll call handleSync which now handles getting the user id from store
+        setTimeout(() => handleSync(), 0)
+    }
+
+    const handleRealConnect = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!email) return
+
+        setIsConnecting(true)
+        try {
+            // 1. Create Basiq User
+            const userRes = await fetch('/api/basiq/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'createUser', email }),
+            })
+
+            if (!userRes.ok) throw new Error('Failed to create Basiq user')
+            const { userId } = await userRes.json()
+
+            // 2. Save user to store
+            setUser({ id: userId, basiqUserId: userId })
+
+            // 3. Get Consent URL
+            const consentRes = await fetch('/api/basiq/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'consentUrl', userId }),
+            })
+
+            if (!consentRes.ok) throw new Error('Failed to get consent URL')
+            const { url } = await consentRes.json()
+
+            // 4. Mark as connected (to show dashboard upon return)
+            setConnected(true)
+
+            // 5. Redirect to Basiq
+            window.location.href = url
+        } catch (error) {
+            console.error('Connection failed:', error)
+            alert('Failed to connect to Basiq. Please check your configuration.')
+        } finally {
+            setIsConnecting(false)
+        }
     }
 
     // Don't render until hydrated to avoid hydration mismatch
@@ -99,7 +152,7 @@ export default function DashboardPage() {
     if (!isConnected) {
         return (
             <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4">
-                <div className="text-center max-w-md">
+                <div className="text-center w-full max-w-md">
                     <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-malachite to-bright-fern">
                         <Vault className="w-10 h-10 text-pitch-black" />
                     </div>
@@ -112,9 +165,45 @@ export default function DashboardPage() {
                         Connect your bank account to start tracking your finances with AI-powered insights.
                     </p>
 
-                    <div className="space-y-3">
+                    <form onSubmit={handleRealConnect} className="space-y-4 mb-8">
+                        <div className="text-left">
+                            <label htmlFor="email" className="block text-xs font-medium text-papaya-whip/50 mb-1.5 ml-1">
+                                Email Address
+                            </label>
+                            <input
+                                id="email"
+                                type="email"
+                                required
+                                placeholder="name@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-papaya-whip placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-malachite/50 focus:border-malachite transition-all"
+                            />
+                        </div>
+
                         <Button
                             variant="primary"
+                            size="lg"
+                            type="submit"
+                            className="w-full"
+                            disabled={isConnecting}
+                        >
+                            {isConnecting ? 'Connecting...' : 'Connect Bank Account'}
+                        </Button>
+                    </form>
+
+                    <div className="relative mb-8">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-slate-800"></div>
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-pitch-black px-2 text-papaya-whip/30">Or try first</span>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <Button
+                            variant="secondary"
                             size="lg"
                             onClick={handleDemoConnect}
                             className="w-full"
@@ -123,7 +212,7 @@ export default function DashboardPage() {
                         </Button>
 
                         <p className="text-xs text-papaya-whip/40">
-                            Demo mode uses sample data. Connect a real bank account for live tracking.
+                            No bank connection required for demo mode.
                         </p>
                     </div>
                 </div>
