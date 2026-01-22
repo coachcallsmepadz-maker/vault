@@ -49,12 +49,16 @@ export async function POST(request: NextRequest) {
         }
     } catch (error: any) {
         console.error('Basiq auth error:', error.response?.data || error.message)
+
+        const status = error.response?.status || 500
+        const message = status === 401 || status === 403 ? 'Authentication failed' : 'Operation failed'
+
         return NextResponse.json(
             {
-                error: 'Authentication failed',
+                error: message,
                 details: error.response?.data?.errors?.[0]?.detail || error.message
             },
-            { status: error.response?.status || 500 }
+            { status }
         )
     }
 }

@@ -110,7 +110,10 @@ export default function DashboardPage() {
 
             if (!userRes.ok) {
                 const errorData = await userRes.json()
-                throw new Error(errorData.error || errorData.details || 'Failed to create Basiq user')
+                const errorMessage = errorData.details
+                    ? `${errorData.error || 'Error'}: ${errorData.details}`
+                    : errorData.error || 'Failed to create Basiq user'
+                throw new Error(errorMessage)
             }
             const { userId } = await userRes.json()
 
