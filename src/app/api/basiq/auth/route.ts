@@ -53,10 +53,20 @@ export async function POST(request: NextRequest) {
         const status = error.response?.status || 500
         const message = status === 401 || status === 403 ? 'Authentication failed' : 'Operation failed'
 
+        // Extract detail from various possible Basiq error formats
+        const responseData = error.response?.data || {}
+        const detail =
+            responseData.errors?.[0]?.detail ||
+            responseData.data?.[0]?.detail ||
+            responseData.errorMessage ||
+            error.message
+
         return NextResponse.json(
             {
                 error: message,
-                details: error.response?.data?.errors?.[0]?.detail || error.message
+                details: detail,
+                // Include full raw error for debugging if needed
+                debug_raw: JSON.stringify(responseData)
             },
             { status }
         )
