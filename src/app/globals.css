@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --malachite: #0dd44c;
+  --bright-fern: #2ba413;
+  --expense: #FF6B35;
+  --critical: #D32F2F;
+  --iron-grey: #4d5453;
+  --pitch-black: #14130e;
+  --papaya-whip: #fff1d0;
+  --card: #1a1815;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--pitch-black);
+  color: var(--papaya-whip);
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--pitch-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--iron-grey);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b6e6d;
+}
+
+/* Number formatting */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+
+/* Chart tooltip customization */
+.recharts-tooltip-wrapper {
+  outline: none;
+}
+
+.recharts-default-tooltip {
+  background-color: var(--card) !important;
+  border: 1px solid var(--iron-grey) !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+}
+
+.recharts-tooltip-label {
+  color: var(--papaya-whip) !important;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.recharts-tooltip-item {
+  color: var(--papaya-whip) !important;
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid var(--malachite);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--malachite);
+  color: var(--pitch-black);
+}
+
+/* Gradient backgrounds */
+.gradient-income {
+  background: linear-gradient(135deg, var(--malachite) 0%, var(--bright-fern) 100%);
+}
+
+.gradient-expense {
+  background: linear-gradient(135deg, var(--expense) 0%, var(--critical) 100%);
+}
+
+.gradient-card {
+  background: linear-gradient(180deg, rgba(77, 84, 83, 0.1) 0%, transparent 100%);
+}
