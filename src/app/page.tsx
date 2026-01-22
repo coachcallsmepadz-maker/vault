@@ -108,7 +108,10 @@ export default function DashboardPage() {
                 body: JSON.stringify({ action: 'createUser', email }),
             })
 
-            if (!userRes.ok) throw new Error('Failed to create Basiq user')
+            if (!userRes.ok) {
+                const errorData = await userRes.json()
+                throw new Error(errorData.error || errorData.details || 'Failed to create Basiq user')
+            }
             const { userId } = await userRes.json()
 
             // 2. Save user to store
@@ -121,7 +124,10 @@ export default function DashboardPage() {
                 body: JSON.stringify({ action: 'consentUrl', userId }),
             })
 
-            if (!consentRes.ok) throw new Error('Failed to get consent URL')
+            if (!consentRes.ok) {
+                const errorData = await consentRes.json()
+                throw new Error(errorData.error || errorData.details || 'Failed to get consent URL')
+            }
             const { url } = await consentRes.json()
 
             // 4. Mark as connected (to show dashboard upon return)
@@ -131,7 +137,7 @@ export default function DashboardPage() {
             window.location.href = url
         } catch (error) {
             console.error('Connection failed:', error)
-            alert('Failed to connect to Basiq. Please check your configuration.')
+            alert(`Connection Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
         } finally {
             setIsConnecting(false)
         }
