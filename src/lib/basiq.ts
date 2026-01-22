@@ -1,8 +1,9 @@
 import axios from 'axios'
 import type { BasiqAccount, BasiqTransaction } from '@/types'
+import { CONFIG } from './config'
 
-const BASIQ_API_URL = process.env.NEXT_PUBLIC_BASIQ_API_URL || 'https://au-api.basiq.io'
-const BASIQ_API_KEY = process.env.BASIQ_API_KEY || ''
+const BASIQ_API_URL = CONFIG.BASIQ_API_URL
+const BASIQ_API_KEY = CONFIG.BASIQ_API_KEY
 
 // Token cache
 let accessToken: string | null = null
